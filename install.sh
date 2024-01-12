@@ -28,7 +28,7 @@ uname_arch() {
 }
 
 execute() {
-    OS="$(uname_os)"
+    OS="$(uname_os | tr '[A-Z]' '[a-z]')"
     echo "OS: ${OS}"
     ARCH="$(uname_arch)"
     echo "ARCH: ${ARCH}"
@@ -37,13 +37,14 @@ execute() {
 
     tmp_dir=$(mktemp -d) || abort "cannot create temp directory"
     # Clean the tmpdir automatically if the shell script exit
-    trap "rm -r ${tmp_dir}" EXIT
+    trap "sudo rm -r ${tmp_dir}" EXIT
 
     echo "Downloading tarball into ${tmp_dir}"
     tarball_name="bytebase_${OS}_${ARCH}.tar.gz"
+		tarball_regex="bytebase_([0-9]+)\.([0-9]+)\.([0-9]+)_${OS}_${ARCH}.tar.gz"
     local_file="${tmp_dir}/${tarball_name}"
     echo ""
-    source_url=$(curl -s https://api.github.com/repos/bytebase/bytebase/releases/latest | grep "http.*${tarball_name}" | cut -d : -f 2,3 | awk '{$1=$1};1' | tr -d \")
+    source_url=$(curl -s https://api.github.com/repos/bytebase/bytebase/releases/latest | grep -E "http.*${tarball_regex}" | cut -d : -f 2,3 | awk '{$1=$1};1' | tr -d \")
     if [ -z "$source_url" ]
     then
         abort "tarball ${local_file} not found"
